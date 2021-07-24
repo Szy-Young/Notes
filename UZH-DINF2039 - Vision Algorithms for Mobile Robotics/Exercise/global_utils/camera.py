@@ -71,13 +71,25 @@ def load_cam_pose(pose_file):
     with open(pose_file, 'r') as f:
         poses = f.readlines()
 
-    rot = []
-    transl = []
-    for pose in poses:
-        pose = pose.split(' ')
-        rot.append(np.array(pose[:3], dtype=np.float32))
-        transl.append(np.array(pose[3:], dtype=np.float32))
-    return np.stack(rot, axis=0), np.stack(transl, axis=0)
+    pose = poses[0].split(' ')
+    # Given (rotation, translation) data format
+    if len(pose) == 6:
+        rot = []
+        transl = []
+        for pose in poses:
+            pose = pose.split(' ')
+            rot.append(np.array(pose[:3], dtype=np.float32))
+            transl.append(np.array(pose[3:], dtype=np.float32))
+        return np.stack(rot, axis=0), np.stack(transl, axis=0)
+    # Given complete extrinsic matrix
+    elif len(pose) == 12:
+        pose_mat = []
+        for pose in poses:
+            pose = pose.split(' ')
+            pose_mat.append(np.array(pose, dtype=np.float32).reshape((3, 4)))
+        return np.stack(pose_mat, axis=0)
+    else:
+        raise ValueError('Unrecognized data format!')
 
 
 def load_K(K_file):
@@ -97,33 +109,3 @@ def load_distortions(D_file):
 
     params = params[0].split(' ')
     return np.array(params, dtype=np.float32)
-
-
-if __name__ == '__main__':
-    pose_file = 'data/poses.txt'
-    K_file = 'data/K.txt'
-    D_file = 'data/D.txt'
-    img_file = 'data/images/img_0001.jpg'
-    save_path = 'results'
-    os.makedirs(save_path, exist_ok=True)
-
-    board_rows = 6
-    board_cols = 9
-
-    # Test the camera model by drawing grid points on checkerboard
-    rot, transl = load_cam_pose(pose_file)
-    pose_mat = pose_to_mat(rot[0], transl[0])
-    K_mat = load_K(K_file)
-    distortions = load_distortions(D_file)
-
-    img = cv2.imread(img_file)
-    points_xyz = []
-    for row in range(board_rows):
-        for col in range(board_cols):
-            points_xyz.append(np.array([0.04*col, 0.04*row, 0], dtype=np.float32))
-    points_xyz = np.stack(points_xyz, axis=0)
-    # points_uv = cam_proj(K_mat, pose_mat, points_xyz)
-    points_uv = cam_proj(K_mat, pose_mat, points_xyz, distortions)
-    for n in range(points_uv.shape[0]):
-        cv2.circle(img, (int(points_uv[n, 0]), int(points_uv[n, 1])), 5, (0, 0, 255), -1)
-    cv2.imwrite(os.path.join(save_path, 'img_0001.jpg'), img)
