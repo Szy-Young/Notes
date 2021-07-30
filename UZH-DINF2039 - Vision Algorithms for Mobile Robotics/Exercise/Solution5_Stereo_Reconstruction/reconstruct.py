@@ -37,7 +37,9 @@ def triangulate(group_K_mat, group_pose_mat, group_points_uv):
         skew_uv = skew_uv.reshape((n_cams, 3, 3))
         A_mat = np.einsum('mij,mjk->mik', skew_uv, group_cam_mat)
         A_mat = A_mat.reshape((n_cams*3, 4))
-        points_xyz[n] = np.matmul(np.linalg.pinv(A_mat[:, :3]), -A_mat[:, 3:]).squeeze(1)
+        u, sigma, vh = np.linalg.svd(A_mat)
+        point_xyz = vh[-1]
+        points_xyz[n] = point_xyz[:3] / (point_xyz[3] + 1e-6)
     return points_xyz
 
 
@@ -74,8 +76,8 @@ if __name__ == '__main__':
         img_h, img_w = img_left.shape[:2]
         img_left = cv2.resize(img_left, (int(rescale_factor*img_w), int(rescale_factor*img_h)))
         img_right = cv2.resize(img_right, (int(rescale_factor*img_w), int(rescale_factor*img_h)))
-        img_left_gray = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        img_right_gray = cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        img_left_gray = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY).astype(np.float64)
+        img_right_gray = cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY).astype(np.float64)
         # Calculate or load the disparity
         # img_disp = get_disparity(img_left_gray, img_right_gray, patch_radius, disp_min, disp_max)
         img_disp = np.load(os.path.join(save_dir, 'disparity', img_file[:-4]+'.npy'))
@@ -83,14 +85,14 @@ if __name__ == '__main__':
         points_uv_left = np.where(img_disp > 0)
         points_color = cv2.cvtColor(img_left, cv2.COLOR_BGR2RGB)[points_uv_left]
         points_uv_disp = img_disp[points_uv_left]
-        points_uv_left = np.stack((points_uv_left[1], points_uv_left[0]), axis=1).astype(np.float32)
+        points_uv_left = np.stack((points_uv_left[1], points_uv_left[0]), axis=1).astype(np.float64)
         points_uv_right = points_uv_left.copy()
         points_uv_right[:, 0] -= points_uv_disp
         group_points_uv = np.stack((points_uv_left, points_uv_right), axis=0)
         # Triangulate the 3D points
         pose_mat_left = np.concatenate((np.eye(3), np.zeros((3, 1))), axis=1)
         pose_mat_right = pose_mat_left.copy()
-        pose_mat_right[:, 3] -= np.array([baseline, 0, 0], dtype=np.float32)
+        pose_mat_right[:, 3] -= np.array([baseline, 0, 0], dtype=np.float64)
         group_pose_mat = np.stack((pose_mat_left, pose_mat_right), axis=0)
         points_xyz = triangulate(group_K_mat, group_pose_mat, group_points_uv)
         # Filter out invalid points
