@@ -36,7 +36,7 @@ def eight_point(group_points_uv):
     # Construct the least squares problem
     for n in range(n_points):
         group_point_uv = coord_to_hom(group_points_uv[:, n])
-        Q[n] = np.kron(group_point_uv[0], group_point_uv[1])
+        Q[n] = np.kron(group_point_uv[1], group_point_uv[0])
 
     # Solve the linear least square by SVD
     u, sigma, vh = np.linalg.svd(Q)
@@ -67,7 +67,7 @@ def normed_eight_point(group_points_uv):
     # Construct the least squares problem
     for n in range(n_points):
         group_point_uv = coord_to_hom(group_points_uv_normed[:, n])
-        Q[n] = np.kron(group_point_uv[0], group_point_uv[1])
+        Q[n] = np.kron(group_point_uv[1], group_point_uv[0])
 
     # Solve the linear least square by SVD
     u, sigma, vh = np.linalg.svd(Q)
@@ -88,7 +88,7 @@ def algebraic_error(group_points_uv, F_mat):
     Q = np.zeros((n_points, 9), dtype=np.float64)
     for n in range(n_points):
         group_point_uv = coord_to_hom(group_points_uv[:, n])
-        Q[n] = np.kron(group_point_uv[0], group_point_uv[1])
+        Q[n] = np.kron(group_point_uv[1], group_point_uv[0])
 
     F_mat = F_mat.reshape((9, 1))
     error = np.linalg.norm(np.matmul(Q, F_mat).squeeze(1)**2) / np.sqrt(n_points)

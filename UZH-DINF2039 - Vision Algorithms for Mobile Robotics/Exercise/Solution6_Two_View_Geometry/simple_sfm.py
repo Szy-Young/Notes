@@ -5,8 +5,10 @@ sys.path.append(parentdir)
 
 from itertools import product
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 
-from eight_point import eight_point
+from eight_point import normed_eight_point
 from global_utils.mvg import triangulate
 from global_utils.camera import coord_to_hom, project_points
 
@@ -89,10 +91,42 @@ if __name__ == '__main__':
     group_points_uv = np.stack(group_points_uv, axis=0)
 
     # Compute the F matrix using eight-point algorithm and extract E matrix
-    F_mat = eight_point(group_points_uv)
+    F_mat = normed_eight_point(group_points_uv)
     E_mat = np.matmul(np.matmul(K_mat.T, F_mat), K_mat)
 
     # Extract relative camera pose from E matrix and disambiguate
     pose_mats = decompose_E_mat(E_mat)
     group_K_mat = np.stack((K_mat, K_mat), axis=0)
     pose_mat, points_xyz = disambiguate_pose(pose_mats, group_K_mat, group_points_uv)
+    print (points_xyz)
+
+    # Visualize the SFM results
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.view_init(90, -90)
+    # Transform the world frame to fit the 3D visualization
+    transform = np.array([[1, 0, 0],
+                          [0, 0, 1],
+                          [0, -1, 0]], dtype=np.float64)
+    points_xyz = project_points(transform, points_xyz)
+    points_x, points_y, points_z = np.split(points_xyz, 3, axis=1)
+    ax.scatter(points_x, points_y, points_z)
+    # Draw the cameras
+    cam_origin_1 = np.zeros(3)
+    cam_axis_1 = np.eye(3)
+    rot, transl = pose_mat[:, :3], pose_mat[:, 3:]
+    c2w = np.concatenate((rot.T, -np.matmul(rot.T, transl)), axis=1)
+    cam_origin_2 = c2w[:, 3]
+    cam_axis_2 = project_points(c2w[:, :3], cam_axis_1)
+    cam_origin_1 = np.matmul(transform, cam_origin_1)
+    cam_origin_2 = np.matmul(transform, cam_origin_2)
+    cam_axis_1 = project_points(transform, cam_axis_1)
+    cam_axis_2 = project_points(transform, cam_axis_2)
+    for i, color in enumerate(['red', 'green', 'blue']):
+        ax.quiver(cam_origin_1[0], cam_origin_1[1], cam_origin_1[2],
+                  cam_axis_1[i, 0], cam_axis_1[i, 1], cam_axis_1[i, 2],
+                  color=color, length=0.5, normalize=True)
+        ax.quiver(cam_origin_2[0], cam_origin_2[1], cam_origin_2[2],
+                  cam_axis_2[i, 0], cam_axis_2[i, 1], cam_axis_2[i, 2],
+                  color=color, length=0.5, normalize=True)
+    fig.savefig(os.path.join(save_dir, 'sfm_topview.png'))
