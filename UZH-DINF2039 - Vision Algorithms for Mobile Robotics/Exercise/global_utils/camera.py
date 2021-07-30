@@ -13,7 +13,7 @@ def pose_to_mat(rot, transl, rot_type='rot_vec', eps=1e-6):
         k_mat = np.array(
             [[0, -k[2], k[1]],
              [k[2], 0, -k[0]],
-             [-k[1], k[0], 0]], dtype=np.float32
+             [-k[1], k[0], 0]], dtype=np.float64
         )
         # Rodrigues Formula
         rot_mat = np.identity(3) + np.sin(theta) * k_mat + (1-np.cos(theta)) * np.matmul(k_mat, k_mat)
@@ -78,15 +78,15 @@ def load_cam_pose(pose_file):
         transl = []
         for pose in poses:
             pose = pose.split(' ')
-            rot.append(np.array(pose[:3], dtype=np.float32))
-            transl.append(np.array(pose[3:], dtype=np.float32))
+            rot.append(np.array(pose[:3], dtype=np.float64))
+            transl.append(np.array(pose[3:], dtype=np.float64))
         return np.stack(rot, axis=0), np.stack(transl, axis=0)
     # Given complete extrinsic matrix
     elif len(pose) == 12:
         pose_mat = []
         for pose in poses:
             pose = pose.split(' ')
-            pose_mat.append(np.array(pose, dtype=np.float32).reshape((3, 4)))
+            pose_mat.append(np.array(pose, dtype=np.float64).reshape((3, 4)))
         return np.stack(pose_mat, axis=0)
     else:
         raise ValueError('Unrecognized data format!')
@@ -96,10 +96,10 @@ def load_K(K_file):
     with open(K_file, 'r') as f:
         params = f.readlines()
 
-    K_mat = np.zeros((3, 3), dtype=np.float32)
+    K_mat = np.zeros((3, 3), dtype=np.float64)
     for i, param in enumerate(params):
         param = param.split()
-        K_mat[i] = np.array(param, dtype=np.float32)
+        K_mat[i] = np.array(param, dtype=np.float64)
     return K_mat
 
 
@@ -108,4 +108,4 @@ def load_distortions(D_file):
         params = f.readlines()
 
     params = params[0].split(' ')
-    return np.array(params, dtype=np.float32)
+    return np.array(params, dtype=np.float64)

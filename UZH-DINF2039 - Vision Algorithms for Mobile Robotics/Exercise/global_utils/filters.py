@@ -8,7 +8,7 @@ def sobel_x(img):
     """
     kernel = np.array([[-1, 0, 1],
                        [-2, 0, 2],
-                       [-1, 0, 1]], dtype=np.float32)
+                       [-1, 0, 1]], dtype=np.float64)
     return convolve2d(img, kernel, mode='valid')
 
 
@@ -18,7 +18,7 @@ def sobel_y(img):
     """
     kernel = np.array([[-1, -2, -1],
                        [0, 0, 0],
-                       [1, 2, 1]], dtype=np.float32)
+                       [1, 2, 1]], dtype=np.float64)
     return convolve2d(img, kernel, mode='valid')
 
 
