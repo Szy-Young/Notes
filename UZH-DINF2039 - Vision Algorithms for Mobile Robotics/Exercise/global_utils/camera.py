@@ -13,7 +13,7 @@ def pose_to_mat(rot, transl, rot_type='rot_vec', eps=1e-6):
         k_mat = np.array(
             [[0, -k[2], k[1]],
              [k[2], 0, -k[0]],
-             [-k[1], k[0], 0]], dtype=np.float64
+             [-k[1], k[0], 0]], dtype=float
         )
         # Rodrigues Formula
         rot_mat = np.identity(3) + np.sin(theta) * k_mat + (1-np.cos(theta)) * np.matmul(k_mat, k_mat)
@@ -67,6 +67,49 @@ def distort_points(points_uv, distortions, center):
     return points_uv
 
 
+def dlt_equation(point_xyz, point_uv):
+    """
+    Derive the linear system of equations given a 3D-2D correspondance.
+    """
+    Q = np.kron(np.array([[1, 0, -1], [0, 1, -1]]), point_xyz)
+    point_uv = point_uv[:, :2].T
+    Q[:, 8:] = Q[:, 8:] * point_uv
+    return Q
+
+
+def dlt(points_xyz, points_uv, K_mat=None):
+    """
+    Implement the basic Direct Linear Transform (DLT) algorithm by solving the linear least
+    squares with SVD.
+    """
+    points_xyz = coord_to_hom(points_xyz)
+    points_uv = coord_to_hom(points_uv)
+    if K_mat is not None:
+        points_uv = np.matmul(np.linalg.inv(K_mat), points_uv.T).T
+
+    # Derive the linear system of equations
+    n_points = points_xyz.shape[0]
+    points_xyz = np.split(points_xyz, n_points)
+    points_uv = np.split(points_uv, n_points)
+    Q = list(map(dlt_equation, points_xyz, points_uv))
+    Q = np.concatenate(Q, axis=0)
+
+    # Solve the linear least square by SVD
+    u, sigma, vh = np.linalg.svd(Q)
+    pose_mat = vh[-1]
+
+    # Extract rotation and translation
+    if pose_mat[-1] < 0:
+        pose_mat = -pose_mat
+    pose_mat = pose_mat.reshape((3, 4))
+    rot, transl = pose_mat[:, :3], pose_mat[:, 3:]
+    u, _, vh = np.linalg.svd(rot)
+    rot_ = np.matmul(u, vh)
+    scale = np.linalg.norm(rot_) / np.linalg.norm(rot)
+    transl_ = transl * scale
+    return np.concatenate((rot_, transl_), axis=1)
+
+
 def load_cam_pose(pose_file):
     with open(pose_file, 'r') as f:
         poses = f.readlines()
@@ -78,15 +121,15 @@ def load_cam_pose(pose_file):
         transl = []
         for pose in poses:
             pose = pose.split(' ')
-            rot.append(np.array(pose[:3], dtype=np.float64))
-            transl.append(np.array(pose[3:], dtype=np.float64))
+            rot.append(np.array(pose[:3], dtype=float))
+            transl.append(np.array(pose[3:], dtype=float))
         return np.stack(rot, axis=0), np.stack(transl, axis=0)
     # Given complete extrinsic matrix
     elif len(pose) == 12:
         pose_mat = []
         for pose in poses:
             pose = pose.split(' ')
-            pose_mat.append(np.array(pose, dtype=np.float64).reshape((3, 4)))
+            pose_mat.append(np.array(pose, dtype=float).reshape((3, 4)))
         return np.stack(pose_mat, axis=0)
     else:
         raise ValueError('Unrecognized data format!')
@@ -96,10 +139,10 @@ def load_K(K_file):
     with open(K_file, 'r') as f:
         params = f.readlines()
 
-    K_mat = np.zeros((3, 3), dtype=np.float64)
+    K_mat = np.zeros((3, 3), dtype=float)
     for i, param in enumerate(params):
         param = param.split()
-        K_mat[i] = np.array(param, dtype=np.float64)
+        K_mat[i] = np.array(param, dtype=float)
     return K_mat
 
 
@@ -108,4 +151,27 @@ def load_distortions(D_file):
         params = f.readlines()
 
     params = params[0].split(' ')
-    return np.array(params, dtype=np.float64)
+    return np.array(params, dtype=float)
+
+
+def load_xyz(xyz_file):
+    with open(xyz_file, 'r') as f:
+        points = f.readlines()
+
+    points_xyz = []
+    for point in points:
+        point = point.split()
+        points_xyz.append(point)
+    return np.array(points_xyz, dtype=float)
+
+
+def load_uv(uv_file):
+    with open(uv_file, 'r') as f:
+        points = f.readlines()
+
+    points_uv_views = []
+    for point in points:
+        point = point.split()
+        points_uv = np.array(point, dtype=float).reshape(-1, 2)
+        points_uv_views.append(points_uv)
+    return np.stack(points_uv_views, axis=0)
