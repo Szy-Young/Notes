@@ -4,4 +4,4 @@
 **High-Dimensional Data Analysis with Low-Dimensional Models:
 Principles, Computation, and Applications**
 
-# 1. 
+# 1. Sparse model
