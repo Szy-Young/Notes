@@ -13,21 +13,21 @@ $ sudo apt install ffmpeg
 **! 使用 ffmpeg 前最好退出 conda**
 
 ### 0. 转码
-* 可以嵌入到任何命令中，确保输出的视频可以在 Windows 播放:
+* 可以嵌入到任何命令中，确保输出的视频可以在 Windows 播放
 ```console
 -c:v libx264 -pix_fmt yuv420p
 ```
 
 ### 1. 空间拼接视频（图片同理）
-* 左右拼接:
+* 左右拼接
 ```console
 $ ffmpeg -i video1.mp4 -i video2.mp4 -filter_complex hstack output.mp4
 ```
-* 上下拼接:
+* 上下拼接
 ```console
 $ ffmpeg -i video1.mp4 -i video2.mp4 -filter_complex vstack output.mp4
 ```
-* 多于2个视频：
+* 多于2个视频
 ```console
 $ ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -filter_complex hstack=inputs=3 output.mp4
 ```
@@ -36,7 +36,7 @@ $ ffmpeg -i video1.mp4 -i video2.mp4 -i video3.mp4 -filter_complex hstack=inputs
 ```console
 $ ffmpeg -i input.png -vf scale=320:240 output.png
 ```
-* 指定宽度，高度基于保持宽高比进行自适应调整: 
+* 指定宽度，高度基于保持宽高比进行自适应调整
 ```console
 $ ffmpeg -i input.png -vf scale=320:-1 output.png
 ```
