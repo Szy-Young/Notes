@@ -49,7 +49,7 @@ $l^0$ 优化问题能得到唯一解的条件：
 * 在...条件下，$x_o$ 是 $l_0$ 优化问题的唯一解；
 * 在...条件下，$x_o$ 是 $l_1$ 优化问题的唯一解。
 
-### 1.3.1 Condition with incoherence
+### 1.3.1 Condition with incoherence
 
 定义矩阵 $A$ 的 mutual coherence ($\mu(A)$) 为：
 * $A$ 中不同两列的最大 cosine similarity。$\mu(A)$ 越小，$A$ 中的列在空间中越分散（越接近正交）。
