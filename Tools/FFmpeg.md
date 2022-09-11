@@ -55,3 +55,9 @@ file /path/to/file2
 file /path/to/file3   
 $ ffmpeg -f concat -safe 0 -i inputlist.txt -c copy output.mp4
 ```
+
+### 5. 截取视频片段
+* 以时/分/秒(hh:mm:ss)为单位指定片段开始和结束的时间点（！不要用-c copy，虽然处理速度快，但会出现截取的片段开始播放时有一段黑屏的bug）
+```console
+$ ffmpeg -ss 00:00:10 -to 00:00:20 -i input.mp4 output.mp4
+```
