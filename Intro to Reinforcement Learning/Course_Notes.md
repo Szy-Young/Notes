@@ -86,6 +86,8 @@ MC的具体做法前面已经介绍过：对某个状态，从它开始采样多
 
 TD Learning是MC方法和Bootstrapping方法的结合：从当前状态$s_t$出发，采样一步，得到奖励$R_{t+1}$并进入状态$s_{t+1}$，此时可以利用当前的价值函数估计$v^{\pi}(s_{t+1})$构造$v^{\pi}(s_t)$的更新目标，即$v^{\pi}(s_t) \leftarrow v^{\pi}(s_t) + \alpha (R_{t+1} + \gamma v^{\pi}(s_{t+1}) - v^{\pi}(s_t))$.
 
+类似地，TD也可以用于$q^{\pi}(s, a)$的价值函数估计，此时的TD方法又称为**Q-learning**.
+
 上述操作是最基本的TD Learning，只向前采样一步就进行更新，被称为TD(0). 也可以采样n步后再进行更新，称为n-step TD. 当采样无穷多步（直到序列终止）时，TD等同于MC.
 
 TD和MC的对比：
@@ -95,3 +97,10 @@ TD和MC的对比：
 
 ## 2.1 Model-free Control
 
+model-free control的总体思路是generalized policy iteration: 用MC或TD（TD(0)或n-step TD）的方法代替boostrapping，对价值函数$q^{\pi}(s, a)$进行估计，然后基于$\pi_{i+1}(s) = \mathop{\arg\max}_{a} q^{\pi_i}(s, a)$来改进当前策略。
+
+**$\epsilon$-greedy:** 在MC或TD方法进行采样时，从当前状态$s$出发，有$1-\epsilon$的概率选择最大化价值的$\mathop{\arg\max}_{a} q^{\pi}(s, a)$，有$\epsilon$的概率选择随机的action. 只是一种典型的tradeoff between exploration and exploitation.
+
+**SARSA:** 基于TD(0)的policy iteration，向前采样一步，得到的更新目标为$q^{\pi}(s_t, a_t) \leftarrow q^{\pi}(s_t, a_t) + \alpha (R_{t+1} + \gamma q^{\pi}(s_{t+1}, a_{t+1}) - q^{\pi}(s_t, a_t))$. 由于包含t时刻的S,A和t+1时刻的R,S,A, 所以称为SARSA算法。
+
+**On/Off policy learning:** SARSA是一种on-policy learning的方法，直接用正在优化的策略进行采样；off-policy则在优化策略的同时使用另一个独立的策略进行采样。
