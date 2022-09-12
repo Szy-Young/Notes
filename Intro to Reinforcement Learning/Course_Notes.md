@@ -26,9 +26,10 @@ RL可以描述为一个序列决策过程。其中一个**agent**包含以下要
 
 根据学习内容，agent可以分为value-based, policy-based, 或二者的结合actor-critic; 根据agent是否带有环境model，可以分为model-based或model-free.
 
+
 # 1. Markov Decision Process (MDP)
 
-MDP是描述RL问题的标准框架。在MDP问题中，环境是完全可观测的(model-based agent).
+MDP是描述RL问题的标准框架。本章节中，我们首先讨论MDP模型已知的情况(model-based agent)。
 
 ## 1.1 Markov Reward Process (MRP)
 
@@ -48,18 +49,34 @@ MDP相比MRP多了action，状态转移概率和奖励函数都会受到action�
 
 MDP中的Bellman equation，价值函数$v(s)$和$q(s, a)$相互耦合：
 * $v^{\pi}(s) = \sum_a \pi(a|s) q^{\pi}(s, a)$
-* $q^{\pi}(s, a) = R_s^a + \gamma \sum_{s'} P(s'|s, a) v^{\pi}(s')$
+* $q^{\pi}(s, a) = R(s, a) + \gamma \sum_{s'} P(s'|s, a) v^{\pi}(s')$
 
 但我们可以将二者解耦：
-* $v^{\pi}(s) = \sum_a \pi(a|s) (R_s^a + \gamma \sum_{s'} P(s'|s, a) v^{\pi}(s'))$
-* $q^{\pi}(s, a) = R_s^a + \gamma \sum_{s'} P(s'|s, a) \sum_{a'} \pi(a'|s') q^{\pi}(s', a')$
+* $v^{\pi}(s) = \sum_a \pi(a|s) (R(s, a) + \gamma \sum_{s'} P(s'|s, a) v^{\pi}(s'))$
+* $q^{\pi}(s, a) = R(s, a) + \gamma \sum_{s'} P(s'|s, a) \sum_{a'} \pi(a'|s') q^{\pi}(s', a')$
 
 ### 1.2.1 MDP prediction
-给定策略下估计MDP价值函数的问题，称为value prediction或policy evaluation。如前所述，给定策略下的MDP等价于MRP，因此可以沿用MRP价值函数估计的Monte-Carlo采样的方法或Bootstrapping迭代的方法。
+**给定策略下估计MDP价值函数的问题**，称为value prediction或policy evaluation。如前所述，给定策略下的MDP等价于MRP，因此可以沿用MRP价值函数估计的Monte-Carlo采样的方法或Bootstrapping迭代的方法。
 
 ### 1.2.1 MDP control
-寻找最大化奖励的策略的问题称为MDP control，即$\pi^*(s) = \mathop{\arg\max}_{\pi} v^{\pi}(s)$. MDP的最优价值是固定的，但最优策略不一定唯一（可以有多个策略具有相同的价值函数）。
+**寻找最大化奖励的策略的问题称为MDP control**，即$\pi^*(s) = \mathop{\arg\max}_{\pi} v^{\pi}(s)$. MDP的最优价值是固定的，但最优策略不一定唯一（可以有多个策略具有相同的价值函数）。
 
 这里介绍两种解法：
-1. **Policy Iteration:** 迭代进行以下两个步骤：(i) **policy evaluation:** 估计当前策略$\pi$的价值函数；(ii) **policy improvement:** 利用贪心算法改进当前策略，$\pi_{i+1}(s) = \mathop{\arg\max}_{a} q^{\pi_i}(s, a)$.
-2. **Value Iteration:** 这种方法基于Bellman optimality equation: $v*(s) = \mathop{\arg\max}_{a} q*(s, a)$，以DP/Bootstrapping的方式求解。首先初始化所有状态的价值$v(s)$，随后迭代进行如下步骤：(i) $q_{k+1}(s, a) = R_s^a + \gamma \sum_{s'} P(s'|s, a) v_k(s')$ (ii) 基于Bellman optimality equation更新最优价值函数$v_{k+1}(s) = \mathop{\arg\max}_{a} q_{k+1}(s, a)$. 在得到最优价值函数后，可以利用$\pi*(s) = \mathop{\arg\max}_{a} R_s^a + \gamma \sum_{s'} P(s'|s, a) v^*(s')$得到最优策略。相比Policy Iteration的方法，Value Iteration只需进行一轮迭代。
+1. **Policy Iteration:** 迭代进行以下两个步骤：(i) **policy evaluation:** （利用Boostrapping方法迭代）估计当前策略$\pi$的价值函数；(ii) **policy improvement:** 利用贪心算法改进当前策略，$\pi_{i+1}(s) = \mathop{\arg\max}_{a} q^{\pi_i}(s, a)$.
+2. **Value Iteration:** 这种方法基于Bellman optimality equation: $v*(s) = \mathop{\arg\max}_{a} q*(s, a)$，以DP/Bootstrapping的方式求解。首先初始化所有状态的价值$v(s)$，随后迭代进行如下步骤：(i) $q_{k+1}(s, a) = R(s, a) + \gamma \sum_{s'} P(s'|s, a) v_k(s')$ (ii) 基于Bellman optimality equation更新最优价值函数$v_{k+1}(s) = \mathop{\arg\max}_{a} q_{k+1}(s, a)$. 在得到最优价值函数后，可以利用$\pi*(s) = \mathop{\arg\max}_{a} R(s, a) + \gamma \sum_{s'} P(s'|s, a) v^*(s')$得到最优策略。相比Policy Iteration的方法，Value Iteration只需进行一轮迭代。
+
+
+# 2. Model-free Prediction and Control
+
+很多时候，RL问题中的MDP模型是未知的。具体来说，状态转移概率$P(s'|s, a)$和奖励函数$R(s, a)$未知。
+
+本章节介绍如何在MDP模型未知的情况下(model-free)解决prediction和control的问题。
+
+## 2.1 Model-free Prediction
+
+主要有两种解法: (i) MC (Monte-Carlo) (ii) TD (Temporal Difference) Learning.
+
+### 2.1.1 MC Policy Evaluation
+
+MC的具体做法前面已经介绍过：对某个状态，从它开始采样多段序列，计算累积奖励的平均值。
+
