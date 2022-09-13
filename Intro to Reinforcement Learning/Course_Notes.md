@@ -13,8 +13,6 @@ RL相比一般监督学习的特点：
 * 每一步不会立刻得到监督信号，只有延迟一段时间后的reward
 * agent不会被告知在某一步是否应该采取某个action，必须通过尝试(exploration and exploitation)寻找能最大化reward的policy
 
-## 0.1 Sequential Decision Making
-
 RL可以描述为一个序列决策过程。其中一个**agent**包含以下要素：
 * **Policy:** 从state/observation到action的映射，形式上通常是带有随机性的$\pi(a|s) = P[A_t=a | S_t=s]$或确定性的$a^* = \mathop{\arg\max}_{a} \pi(a|s)$.
 * **Value function:** *固定policy下*，当前state/action未来累积获得reward的期望值，累积时通常以速率$\gamma$随时间衰减（更看重能在近期获得的reward）。
@@ -95,7 +93,7 @@ TD和MC的对比：
 * TD得到的更新目标是对价值函数的有偏估计，但方差小；MC得到的是无偏估计，但方差大。
 * MC可以用于非Markov的过程，TD则不行。
 
-## 2.1 Model-free Control
+## 2.2 Model-free Control
 
 model-free control的总体思路是generalized policy iteration: 用MC或TD（TD(0)或n-step TD）的方法代替boostrapping，对价值函数$q^{\pi}(s, a)$进行估计，然后基于$\pi_{i+1}(s) = \mathop{\arg\max}_{a} q^{\pi_i}(s, a)$来改进当前策略。
 
@@ -104,3 +102,8 @@ model-free control的总体思路是generalized policy iteration: 用MC或TD（T
 **SARSA:** 基于TD(0)的policy iteration，向前采样一步，得到的更新目标为$q^{\pi}(s_t, a_t) \leftarrow q^{\pi}(s_t, a_t) + \alpha (R_{t+1} + \gamma q^{\pi}(s_{t+1}, a_{t+1}) - q^{\pi}(s_t, a_t))$. 由于包含t时刻的S,A和t+1时刻的R,S,A, 所以称为SARSA算法。
 
 **On/Off policy learning:** SARSA是一种on-policy learning的方法，直接用正在优化的策略进行采样；off-policy则在优化策略的同时使用另一个独立的策略进行采样。
+
+
+# 3. Value Function Approximation
+
+当RL问题的状态数量过多时
