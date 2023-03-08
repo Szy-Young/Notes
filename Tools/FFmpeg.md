@@ -61,3 +61,13 @@ $ ffmpeg -f concat -safe 0 -i inputlist.txt -c copy output.mp4
 ```console
 $ ffmpeg -ss 00:00:10 -to 00:00:20 -i input.mp4 output.mp4
 ```
+
+### 6. Change video speed
+* Speed up
+```console
+$ ffmpeg -i input.mp4 -filter:v "setpts=0.5*PTS" output.mp4
+```
+* Slow down
+```console
+$ ffmpeg -i input.mp4 -filter:v "setpts=2.0*PTS" output.mp4
+```
