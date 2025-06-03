@@ -65,3 +65,36 @@ Shape matching是一种相比于1.2.3的方法更简化的刚体碰撞模拟方�
 各个顶点独立模拟后，物体已经发生了形变，此时再根据各顶点新的位置计算一个rigid transformation，把物体重新约束回一个刚体。
 
 <img src="figures/1_shape_matching.png" width=600>
+
+
+# 2. Cloth 衣物
+
+## 2.1 Mass-Spring System
+
+<img src="figures/2_mass_spring.png" width=600>
+
+通过组合多个质点并在它们之间连接弹簧，很适合用来模拟衣物。
+
+<img src="figures/2_mass_spring_system.png" width=600>
+
+对于整齐排列的矩形网格，我们可以在网格原有的边以及对角线上加入弹簧，来模拟沿各个方向的拉力。
+对于三角形排列并不规整的mesh网格，我们也可以直接利用原有的边、并在相邻两个三角形的对角顶点之间连线，作为弹簧。
+
+### 2.1.1 Explicit integration of a mass-spring system 质点弹簧系统的显式积分
+
+<img src="figures/2_spring_explicit_int.png" width=600>
+
+用显式积分的方式直接模拟拉力作用下弹簧的运动非常方便，但显式积分存在数值不稳定问题，特别是在弹性系数$k$或时间间隔$\delta t$取得过大时。
+
+### 2.1.1 Implicit integration of a mass-spring system 质点弹簧系统的隐式积分
+
+<img src="figures/2_spring_implicit_int.png" width=600>
+
+隐式积分有更好的数值稳定，但相比于显式积分简单的前向计算，隐式积分的计算更复杂，需要求解非线性方程。
+对方程中未知数$x^{[1]}$的求解，可以用Newton法来迭代计算。
+
+<img src="figures/2_implicit_Fx.png" width=600>
+
+特别地，我们把这个解方程问题转化为对函数$F(x)$的优化问题，因为从求解优化问题的角度，可以直观理解模拟结果中的很多现象。
+例如，我们分析目标函数$F(x)$的Hessian矩阵，会发现当弹簧拉长时，Hessian矩阵正定（优化问题有全局最优解）；弹簧缩短时，Hessian矩阵不能保证正定。
+直观来看，弹簧拉长时，必然是沿直线拉伸的；而弹簧缩短时则可能向不同方向弯折。
