@@ -142,3 +142,28 @@ PBD方法中，强行约束了弹簧长度不变，如果想模拟具备一定�
 Strain limiting方法作为PBD的进阶版，改进了这一问题。它的设计思路是：
 允许弹簧长度在一定阈值内变化(e.g.,不超过弹簧原长的20%)。当长度变化在阈值内时，基于质点弹簧系统做常规的受力模拟；当长度变化超过阈值时，用PBD的方法进行强制约束。
 这种思路非常符合真实世界中弹簧的常见情况：具备一定程度的弹性，但形变到一定程度时很难再进一步拉伸/压缩。
+
+
+# 3. Finite Element Method (FEM) / Finite Volume Method (FVM) 有限元方法
+
+不同于质点弹簧系统以边为对象，能量和受力都与边的形变（拉伸/压缩）相关；FEM/FVM以构成物体的element（通常是三角形/四面体）为对象，顶点上的受力与三角形/四面体的形变（例如剪切，比边的拉伸/压缩更复杂）有关。
+
+这里介绍一种简单的、以三角形面片为对象的有限元方法：
+* **F (deformation gradient):** 首先定义deformation gradient，用来描述三角形从静止状态（reference）到当前状态的运动。
+
+<img src="figures/3_deform_grad.png" width=600>
+
+* **G (Green strain):** 从deformation gradient导出Green strain，它消除了三角形运动中的旋转部分，准确地描述了三角形形变的幅度。
+
+<img src="figures/3_green_strain.png" width=600>
+
+* **W (Energy density):** 定义形变量Green Strain (G)相关的能量模型。这里把单位面积上的能量密度定义为形变量G的函数W(G)，称为StVK模型。这是FEM中最简单的一种能量模型，对不同的问题还有其他复杂得多的能量模型。
+
+<img src="figures/3_stvk_energy.png" width=600>
+
+* **f (force):** 计算能量对顶点位移的梯度，即可得到该顶点的受力。
+
+<img src="figures/3_stvk_force.png" width=600>
+
+FVM与FEM在参考系和推导过程上有所不同：FEM是建立在静止状态（reference）上、从能量密度的微分推导出的，FVM则是建立在当前形变后的状态上、从traction的积分导出的。
+但在三角形/四面体这类线性的element上，两者推导出的能量/受力模型是等效的。
